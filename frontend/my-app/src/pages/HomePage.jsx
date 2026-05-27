@@ -64,7 +64,7 @@ const FeatureCard = ({ icon: Icon, title, description, delay, index, gradient })
     >
       {/* Animated gradient border on hover */}
       <motion.div 
-        className="absolute inset-0 rounded-2xl bg-gradient-to-r from-brand-500/0 via-brand-500/20 to-brand-500/0 opacity-0 group-hover:opacity-100"
+        className="absolute inset-0 opacity-0 rounded-2xl bg-gradient-to-r from-brand-500/0 via-brand-500/20 to-brand-500/0 group-hover:opacity-100"
         animate={{ x: ['-100%', '100%'] }}
         transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
         style={{ pointerEvents: 'none' }}
@@ -84,7 +84,7 @@ const FeatureCard = ({ icon: Icon, title, description, delay, index, gradient })
         <p className="leading-relaxed text-slate-400">{description}</p>
         
         <motion.div 
-          className="mt-4 flex items-center gap-1 text-brand-400 opacity-0 group-hover:opacity-100 transition-opacity"
+          className="flex items-center gap-1 mt-4 transition-opacity opacity-0 text-brand-400 group-hover:opacity-100"
           initial={{ x: -10 }}
           whileHover={{ x: 0 }}
         >
@@ -186,14 +186,14 @@ const AnimatedCounter = ({ end, duration = 2, suffix = "", prefix = "" }) => {
 // ==================== TESTIMONIAL CAROUSEL ====================
 const testimonials = [
   {
-    name: "Rahul Sharma",
+    name: "Punam Patil",
     role: "3rd Year Student",
     content: "The QR code system is incredibly fast! No more standing in queues for gate passes.",
     rating: 5,
     avatar: "👨‍🎓"
   },
   {
-    name: "Dr. Meena Gupta",
+    name: "Dr. Patil",
     role: "Warden",
     content: "Managing gate passes digitally has made my job so much easier. Real-time tracking is a game changer.",
     rating: 5,
@@ -207,7 +207,7 @@ const testimonials = [
     avatar: "🛡️"
   },
   {
-    name: "Prof. Anil Kumar",
+    name: "DR.Sandeep P. Abhang",
     role: "HOD Computer Science",
     content: "Excellent system that ensures student safety while providing convenience.",
     rating: 5,
@@ -259,12 +259,12 @@ const TestimonialCarousel = () => {
           initial="enter"
           animate="center"
           exit="exit"
-          className="p-8 text-center bg-white/5 backdrop-blur-md rounded-2xl border border-white/10"
+          className="p-8 text-center border bg-white/5 backdrop-blur-md rounded-2xl border-white/10"
         >
           <div className="mb-4 text-6xl">{testimonials[current].avatar}</div>
           <div className="flex justify-center gap-1 mb-4">
             {[...Array(testimonials[current].rating)].map((_, i) => (
-              <Star key={i} size={18} className="fill-yellow-500 text-yellow-500" />
+              <Star key={i} size={18} className="text-yellow-500 fill-yellow-500" />
             ))}
           </div>
           <p className="mb-6 text-lg text-slate-300">"{testimonials[current].content}"</p>
@@ -275,13 +275,13 @@ const TestimonialCarousel = () => {
       
       <button
         onClick={prevSlide}
-        className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-12 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all hover:scale-110"
+        className="absolute left-0 p-2 transition-all -translate-x-12 -translate-y-1/2 rounded-full top-1/2 bg-white/10 hover:bg-white/20 hover:scale-110"
       >
         <ChevronLeft size={24} className="text-white" />
       </button>
       <button
         onClick={nextSlide}
-        className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-12 p-2 rounded-full bg-white/10 hover:bg-white/20 transition-all hover:scale-110"
+        className="absolute right-0 p-2 transition-all translate-x-12 -translate-y-1/2 rounded-full top-1/2 bg-white/10 hover:bg-white/20 hover:scale-110"
       >
         <ChevronRight size={24} className="text-white" />
       </button>
@@ -396,7 +396,7 @@ const StatsSection = () => {
           viewport={{ once: true }}
           transition={{ delay: idx * 0.1, type: "spring", stiffness: 200 }}
           whileHover={{ y: -5, scale: 1.05 }}
-          className="p-6 text-center bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10"
+          className="p-6 text-center border bg-white/5 backdrop-blur-sm rounded-2xl border-white/10"
         >
           <div className="flex justify-center mb-3">
             <stat.icon className="w-8 h-8 text-brand-400" />
@@ -425,7 +425,7 @@ const ActivityFeed = () => {
       initial={{ opacity: 0, x: 50 }}
       whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true }}
-      className="p-6 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10"
+      className="p-6 border bg-white/5 backdrop-blur-sm rounded-2xl border-white/10"
     >
       <div className="flex items-center gap-2 mb-4">
         <Activity className="w-5 h-5 text-brand-400" />
@@ -438,7 +438,7 @@ const ActivityFeed = () => {
             initial={{ opacity: 0, x: -20 }}
             whileInView={{ opacity: 1, x: 0 }}
             transition={{ delay: idx * 0.1 }}
-            className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors"
+            className="flex items-center gap-3 p-2 transition-colors rounded-lg hover:bg-white/5"
           >
             <div className="p-2 rounded-lg bg-brand-500/20">
               <activity.icon className="w-4 h-4 text-brand-400" />
@@ -531,21 +531,21 @@ const HomePage = () => {
 
           {/* Floating elements */}
           <motion.div
-            className="absolute top-20 left-10 hidden lg:block"
+            className="absolute hidden top-20 left-10 lg:block"
             animate={{ y: [0, -15, 0], rotate: [0, 10, 0] }}
             transition={{ duration: 4, repeat: Infinity }}
           >
-            <div className="p-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20">
+            <div className="p-3 border bg-white/10 backdrop-blur-md rounded-2xl border-white/20">
               <QrCode size={32} className="text-brand-400" />
             </div>
           </motion.div>
           
           <motion.div
-            className="absolute bottom-20 right-10 hidden lg:block"
+            className="absolute hidden bottom-20 right-10 lg:block"
             animate={{ y: [0, 15, 0], rotate: [0, -10, 0] }}
             transition={{ duration: 5, repeat: Infinity, delay: 1 }}
           >
-            <div className="p-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20">
+            <div className="p-3 border bg-white/10 backdrop-blur-md rounded-2xl border-white/20">
               <Shield size={32} className="text-purple-400" />
             </div>
           </motion.div>
@@ -684,7 +684,7 @@ const HomePage = () => {
                 <motion.div
                   key={idx}
                   whileHover={{ scale: 1.05 }}
-                  className="flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10"
+                  className="flex items-center gap-2 px-4 py-2 border rounded-full bg-white/5 border-white/10"
                 >
                   <CheckCircle size={16} className="text-green-400" />
                   <span className="text-sm text-white">{feature}</span>
