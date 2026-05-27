@@ -3,7 +3,6 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 
-// Routes
 const authRoutes = require('./routes/authRoutes');
 const adminRoutes = require('./routes/adminRoutes');
 const studentRoutes = require('./routes/studentRoutes');
@@ -12,26 +11,27 @@ const wardenRoutes = require('./routes/wardenRoutes');
 const securityRoutes = require('./routes/securityRoutes');
 const hodRoutes = require('./routes/hodRoutes');
 
-// Load env
 dotenv.config();
 
 const app = express();
 
-// Middlewares
+// ✅ FIXED CORS
 app.use(cors({
   origin: [
     'http://localhost:5173',
     'http://localhost:3000',
     process.env.FRONTEND_URL,
   ].filter(Boolean),
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],   // ← ADDED
+  allowedHeaders: ['Content-Type', 'Authorization'],       // ← ADDED
   credentials: true,
 }));
+app.options('*', cors());  // ← ADDED (handles preflight)
+
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 app.use('/uploads', express.static('uploads'));
 
-// Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/student', studentRoutes);
@@ -40,17 +40,14 @@ app.use('/api/warden', wardenRoutes);
 app.use('/api/security', securityRoutes);
 app.use('/api/hod', hodRoutes);
 
-// Home route
 app.get('/', (req, res) => {
   res.send('Smart Hostel Gate Pass System API is running...');
 });
 
-// 404 handler
 app.use((req, res) => {
   res.status(404).json({ message: `Not Found - ${req.originalUrl}` });
 });
 
-// Error handler
 app.use((err, req, res, next) => {
   console.error(err);
   res.status(500).json({
