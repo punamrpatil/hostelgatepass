@@ -9,41 +9,7 @@ const Login = ({ onLoginSuccess }) => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // TEST MODE - Use these credentials for testing
-  const TEST_CREDENTIALS = {
-    admin: { email: 'admin@example.com', password: 'admin123', role: 'Admin', name: 'Admin User' },
-    student: { email: 'student@example.com', password: 'student123', role: 'Student', name: 'Test Student' },
-    tg: { email: 'tg@example.com', password: 'tg123', role: 'TG', name: 'Test TG' },
-    warden: { email: 'warden@example.com', password: 'warden123', role: 'Warden', name: 'Test Warden' }
-  };
-
-  const handleTestLogin = (userType) => {
-    const creds = TEST_CREDENTIALS[userType];
-    if (!creds) return;
-    
-    // Create mock token and user
-    const mockToken = 'mock-jwt-token-for-testing-' + Date.now();
-    const userData = {
-      _id: `test_${userType}_${Date.now()}`,
-      id: `test_${userType}_${Date.now()}`,
-      name: creds.name,
-      email: creds.email,
-      role: creds.role,
-      phone: '9999999999'
-    };
-    
-    localStorage.setItem('token', mockToken);
-    localStorage.setItem('user', JSON.stringify(userData));
-    
-    if (onLoginSuccess) onLoginSuccess();
-    
-    // Redirect based on role
-    const rolePath = creds.role === 'Admin' ? '/admin' :
-                    creds.role === 'Student' ? '/student' :
-                    creds.role === 'TG' ? '/tg' :
-                    creds.role === 'Warden' ? '/warden' : '/';
-    navigate(rolePath);
-  };
+  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000';
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -56,8 +22,7 @@ const Login = ({ onLoginSuccess }) => {
     setError('');
     
     try {
-      // Try to connect to backend
-      const response = await fetch('http://localhost:5000/api/auth/login', {
+      const response = await fetch(`${API_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -97,9 +62,8 @@ const Login = ({ onLoginSuccess }) => {
       
     } catch (err) {
       console.error('Login error:', err);
-      
       if (err.message.includes('Failed to fetch') || err.message.includes('NetworkError')) {
-        setError('Cannot connect to backend server. Please ensure backend is running on port 5000. Use Test Login buttons below for development.');
+        setError('Cannot connect to server. Please try again later.');
       } else {
         setError(err.message || 'Login failed. Invalid credentials.');
       }
@@ -169,41 +133,6 @@ const Login = ({ onLoginSuccess }) => {
             {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <>Sign In <ArrowRight size={18} /></>}
           </button>
         </form>
-
-        {/* TEST LOGIN BUTTONS - For development only */}
-        <div className="pt-4 mt-6 border-t border-white/10">
-          <p className="mb-3 text-xs text-center text-slate-500">⚠️ Test Mode (Backend not connected)</p>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => handleTestLogin('admin')}
-              className="px-3 py-2 text-xs font-semibold text-purple-400 transition-colors rounded-lg bg-purple-500/20 hover:bg-purple-500/30"
-            >
-              Test: Admin
-            </button>
-            <button
-              type="button"
-              onClick={() => handleTestLogin('student')}
-              className="px-3 py-2 text-xs font-semibold text-green-400 transition-colors rounded-lg bg-green-500/20 hover:bg-green-500/30"
-            >
-              Test: Student
-            </button>
-            <button
-              type="button"
-              onClick={() => handleTestLogin('tg')}
-              className="px-3 py-2 text-xs font-semibold text-blue-400 transition-colors rounded-lg bg-blue-500/20 hover:bg-blue-500/30"
-            >
-              Test: TG
-            </button>
-            <button
-              type="button"
-              onClick={() => handleTestLogin('warden')}
-              className="px-3 py-2 text-xs font-semibold text-orange-400 transition-colors rounded-lg bg-orange-500/20 hover:bg-orange-500/30"
-            >
-              Test: Warden
-            </button>
-          </div>
-        </div>
 
         <div className="mt-6 text-xs font-medium text-center text-slate-400">
           First time student?{' '}
