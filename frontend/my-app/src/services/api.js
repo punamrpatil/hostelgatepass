@@ -1,7 +1,9 @@
 import axios from 'axios';
 
 const API = axios.create({
-  baseURL: 'http://localhost:5000/api',
+  baseURL: import.meta.env.VITE_API_URL 
+    ? `${import.meta.env.VITE_API_URL}/api` 
+    : 'http://localhost:5000/api',
   timeout: 15000
 });
 
@@ -105,17 +107,17 @@ export const adminService = {
     const response = await API.get('/admin/stats');
     return response.data;
   },
-  // ✅ NEW: Assign TG to Student
+  // Assign TG to Student
   assignTG: async (studentId, tgId) => {
     const response = await API.post('/admin/assign-tg', { studentId, tgId });
     return response.data;
   },
-  // ✅ NEW: Get all TG users
+  // Get all TG users
   getAllTGs: async () => {
     const response = await API.get('/admin/tgs');
     return response.data;
   },
-  // ✅ NEW: Get student by ID
+  // Get student by ID
   getStudentById: async (studentId) => {
     const response = await API.get(`/admin/students/${studentId}`);
     return response.data;
