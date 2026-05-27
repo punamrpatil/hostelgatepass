@@ -1,4 +1,3 @@
-const fs = require('fs');
 const xlsx = require('xlsx');
 const User = require('../models/User');
 const Student = require('../models/Student');
@@ -18,23 +17,23 @@ const uploadExcelStudents = async (req, res) => {
   const errors = [];
 
   try {
-    // ✅ Read from memory buffer — no disk folder needed
+    // ✅ Read from memory buffer (works with multer memoryStorage)
     const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const rawRows = xlsx.utils.sheet_to_json(worksheet);
 
     for (const row of rawRows) {
-      const name = row.name ? row.name.toString().trim() : '';
-      const rollNo = row.rollNo ? row.rollNo.toString().trim() : '';
-      const branch = row.branch ? row.branch.toString().trim() : '';
-      const division = row.division ? row.division.toString().trim() : '';
-      const gender = row.gender ? row.gender.toString().trim() : '';
+      const name         = row.name         ? row.name.toString().trim()         : '';
+      const rollNo       = row.rollNo       ? row.rollNo.toString().trim()       : '';
+      const branch       = row.branch       ? row.branch.toString().trim()       : '';
+      const division     = row.division     ? row.division.toString().trim()     : '';
+      const gender       = row.gender       ? row.gender.toString().trim()       : '';
       const studentPhone = row.studentPhone ? row.studentPhone.toString().trim() : '';
-      const parentPhone = row.parentPhone ? row.parentPhone.toString().trim() : '';
-      const roomNo = row.roomNo ? row.roomNo.toString().trim() : '';
-      const email = row.email ? row.email.toString().trim().toLowerCase() : '';
-      const tgNameInput = row.tgName ? row.tgName.toString().trim() : '';
+      const parentPhone  = row.parentPhone  ? row.parentPhone.toString().trim()  : '';
+      const roomNo       = row.roomNo       ? row.roomNo.toString().trim()       : '';
+      const email        = row.email        ? row.email.toString().trim().toLowerCase() : '';
+      const tgNameInput  = row.tgName       ? row.tgName.toString().trim()       : '';
 
       if (!name || !rollNo || !branch || !division || !gender || !studentPhone || !parentPhone || !roomNo || !email) {
         errors.push({ row, reason: 'Missing mandatory fields' });
@@ -42,7 +41,7 @@ const uploadExcelStudents = async (req, res) => {
         continue;
       }
 
-      const userExists = await User.findOne({ email });
+      const userExists    = await User.findOne({ email });
       const studentExists = await Student.findOne({ rollNo });
       if (userExists || studentExists) {
         errors.push({ rollNo, email, reason: 'Duplicate email or roll number found' });
@@ -60,7 +59,7 @@ const uploadExcelStudents = async (req, res) => {
         });
 
         let matchedTG = await TG.findOne({
-          branch: { $regex: new RegExp(`^${branch}$`, 'i') },
+          branch:   { $regex: new RegExp(`^${branch}$`, 'i') },
           division: { $regex: new RegExp(`^${division}$`, 'i') }
         });
         if (!matchedTG && tgNameInput) {
@@ -74,7 +73,7 @@ const uploadExcelStudents = async (req, res) => {
           rollNo,
           branch,
           division,
-          gender: ['Male', 'Female'].includes(gender) ? gender : 'Male',
+          gender: ['Male', 'Female', 'Other'].includes(gender) ? gender : 'Male',
           studentPhone,
           parentPhone,
           roomNo,
@@ -113,18 +112,18 @@ const uploadExcelTGs = async (req, res) => {
   const errors = [];
 
   try {
-    // ✅ Read from memory buffer — no disk folder needed
+    // ✅ Read from memory buffer
     const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const rawRows = xlsx.utils.sheet_to_json(worksheet);
 
     for (const row of rawRows) {
-      const tgName = row.tgName ? row.tgName.toString().trim() : '';
-      const branch = row.branch ? row.branch.toString().trim() : '';
-      const division = row.division ? row.division.toString().trim() : '';
-      const email = row.email ? row.email.toString().trim().toLowerCase() : '';
-      const phone = row.phone ? row.phone.toString().trim() : '';
+      const tgName   = row.tgName   ? row.tgName.toString().trim()              : '';
+      const branch   = row.branch   ? row.branch.toString().trim()              : '';
+      const division = row.division ? row.division.toString().trim()            : '';
+      const email    = row.email    ? row.email.toString().trim().toLowerCase() : '';
+      const phone    = row.phone    ? row.phone.toString().trim()               : '';
 
       if (!tgName || !branch || !division || !email || !phone) {
         errors.push({ row, reason: 'Missing mandatory fields' });
@@ -156,9 +155,10 @@ const uploadExcelTGs = async (req, res) => {
           phone
         });
 
+        // Auto-assign unassigned students in same branch/division
         await Student.updateMany(
           {
-            branch: { $regex: new RegExp(`^${branch}$`, 'i') },
+            branch:   { $regex: new RegExp(`^${branch}$`, 'i') },
             division: { $regex: new RegExp(`^${division}$`, 'i') },
             tgId: null
           },
@@ -184,7 +184,7 @@ const uploadExcelTGs = async (req, res) => {
   }
 };
 
-// @desc    Get all users in system
+// @desc    Get all users
 // @route   GET /api/admin/users
 // @access  Private/Admin
 const getAllUsers = async (req, res) => {
@@ -230,7 +230,7 @@ const searchStudent = async (req, res) => {
   }
 };
 
-// @desc    Get all gatepass records
+// @desc    Get all gate pass records
 // @route   GET /api/admin/gatepasses
 // @access  Private/Admin
 const getAllGatePasses = async (req, res) => {
@@ -271,7 +271,7 @@ const assignTG = async (req, res) => {
   }
 };
 
-// @desc    Get all TGs for dropdown
+// @desc    Get all TGs
 // @route   GET /api/admin/tgs
 // @access  Private/Admin
 const getAllTGs = async (req, res) => {
@@ -288,10 +288,10 @@ const getAllTGs = async (req, res) => {
 // @access  Private/Admin
 const getStats = async (req, res) => {
   try {
-    const totalUsers = await User.countDocuments();
+    const totalUsers    = await User.countDocuments();
     const studentsCount = await User.countDocuments({ role: 'Student' });
-    const tgsCount = await User.countDocuments({ role: 'TG' });
-    const wardensCount = await User.countDocuments({ role: 'Warden' });
+    const tgsCount      = await User.countDocuments({ role: 'TG' });
+    const wardensCount  = await User.countDocuments({ role: 'Warden' });
     const totalGatePasses = await GatePass.countDocuments();
     res.json({ totalUsers, studentsCount, tgsCount, wardensCount, totalGatePasses });
   } catch (error) {

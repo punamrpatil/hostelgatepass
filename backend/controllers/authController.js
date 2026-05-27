@@ -3,12 +3,14 @@ const User = require('../models/User');
 const Student = require('../models/Student');
 const TG = require('../models/TG');
 const Notification = require('../models/Notification');
+
 // Sign JWT Utility
 const generateToken = (id) => {
-  return jwt.sign({ id }, process.env.JWT_SECRET || 'smarthostelgatepasssecretkey2026', {
+  return jwt.sign({ id }, process.env.JWT_SECRET, {
     expiresIn: '30d'
   });
 };
+
 // @desc    Register a new user
 // @route   POST /api/auth/register
 // @access  Public
@@ -19,26 +21,21 @@ const registerUser = async (req, res) => {
     if (userExists) {
       return res.status(400).json({ message: 'User already exists with this email address' });
     }
-    // Create Base User
-    const user = await User.create({
-      name,
-      email,
-      password,
-      role,
-      phone
-    });
+
+    const user = await User.create({ name, email, password, role, phone });
+
     if (!user) {
       return res.status(400).json({ message: 'Invalid user data provided' });
     }
-    // Extra Profile Setup for Student or TG Roles if manually registering
+
     if (role === 'Student') {
       const { rollNo, branch, division, gender, studentPhone, parentPhone, roomNo } = extraDetails;
-      
-      // Auto-assign TG if possible
+
       const matchingTG = await TG.findOne({
         branch: { $regex: new RegExp(`^${branch}$`, 'i') },
         division: { $regex: new RegExp(`^${division}$`, 'i') }
       });
+
       await Student.create({
         userId: user._id,
         rollNo: rollNo || `ROLL-${Date.now()}`,
@@ -60,6 +57,7 @@ const registerUser = async (req, res) => {
         phone: phone || '0000000000'
       });
     }
+
     res.status(201).json({
       _id: user._id,
       name: user.name,
@@ -72,6 +70,7 @@ const registerUser = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 // @desc    Auth user & get token
 // @route   POST /api/auth/login
 // @access  Public
@@ -82,11 +81,12 @@ const loginUser = async (req, res) => {
     if (!user) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
+
     const isMatch = await user.matchPassword(password);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid email or password' });
     }
-    // Fetch child records if role is Student or TG
+
     let details = {};
     if (user.role === 'Student') {
       const student = await Student.findOne({ userId: user._id }).populate('tgId');
@@ -95,6 +95,7 @@ const loginUser = async (req, res) => {
       const tg = await TG.findOne({ userId: user._id });
       details = { tg };
     }
+
     res.json({
       _id: user._id,
       name: user.name,
@@ -109,6 +110,7 @@ const loginUser = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 // @desc    Get user profile
 // @route   GET /api/auth/profile
 // @access  Private
@@ -118,6 +120,7 @@ const getUserProfile = async (req, res) => {
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
+
     let profileData = {
       _id: user._id,
       name: user.name,
@@ -125,6 +128,7 @@ const getUserProfile = async (req, res) => {
       role: user.role,
       phone: user.phone
     };
+
     if (user.role === 'Student') {
       const student = await Student.findOne({ userId: user._id }).populate({
         path: 'tgId',
@@ -135,12 +139,14 @@ const getUserProfile = async (req, res) => {
       const tg = await TG.findOne({ userId: user._id });
       profileData.tg = tg;
     }
+
     res.json(profileData);
   } catch (error) {
     console.error('Get Profile Error:', error);
     res.status(500).json({ message: error.message });
   }
 };
+
 // @desc    Get user notifications
 // @route   GET /api/auth/notifications
 // @access  Private
@@ -154,6 +160,7 @@ const getUserNotifications = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 // @desc    Mark notifications as read
 // @route   PUT /api/auth/notifications/read
 // @access  Private
@@ -165,6 +172,7 @@ const markNotificationsRead = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
 module.exports = {
   registerUser,
   loginUser,

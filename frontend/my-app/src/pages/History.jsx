@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { History as HistoryIcon, Calendar, ArrowLeft, Clock, Search, HelpCircle } from 'lucide-react';
+import { History as HistoryIcon, Calendar, ArrowLeft, Clock, Search, HelpCircle, Loader2 } from 'lucide-react';
 import { studentService } from '../services/api';
+
 const History = () => {
   const [history, setHistory] = useState([]);
   const [filteredHistory, setFilteredHistory] = useState([]);
@@ -9,6 +10,7 @@ const History = () => {
   const [filter, setFilter] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const navigate = useNavigate();
+
   const fetchHistory = async () => {
     try {
       const data = await studentService.getHistory();
@@ -20,30 +22,27 @@ const History = () => {
       setLoading(false);
     }
   };
+
   useEffect(() => {
     fetchHistory();
   }, []);
-  // Sync Search and Filter logic
+
   useEffect(() => {
     let result = [...history];
-    // Role/Status Filter
-    if (filter !== 'All') {
-      if (filter === 'Pending') {
-        result = result.filter(p => p.status.includes('Pending'));
-      } else if (filter === 'Approved') {
-        result = result.filter(p => p.status === 'Approved_Warden');
-      } else if (filter === 'Rejected') {
-        result = result.filter(p => p.status.includes('Rejected'));
-      }
+    if (filter === 'Pending') {
+      result = result.filter(p => p.status.includes('Pending'));
+    } else if (filter === 'Approved') {
+      result = result.filter(p => p.status === 'Approved_Warden');
+    } else if (filter === 'Rejected') {
+      result = result.filter(p => p.status.includes('Rejected'));
     }
-    // Search query
     if (searchTerm) {
       const regex = new RegExp(searchTerm, 'i');
       result = result.filter(p => regex.test(p.reason));
     }
     setFilteredHistory(result);
   }, [filter, searchTerm, history]);
-  // Helper badge formatting
+
   const getStatusBadge = (status) => {
     switch (status) {
       case 'Pending_TG':
@@ -59,10 +58,11 @@ const History = () => {
         return <span className="inline-flex items-center rounded-full bg-slate-500/10 px-2.5 py-0.5 text-xs font-semibold text-slate-400 border border-slate-500/20">{status}</span>;
     }
   };
+
   return (
     <div className="p-6 space-y-6">
-      
-      {/* Header block */}
+
+      {/* Header */}
       <div className="flex items-center gap-3">
         <button
           onClick={() => navigate('/student')}
@@ -79,9 +79,9 @@ const History = () => {
           </span>
         </div>
       </div>
-      {/* Filters and Search toolbar */}
+
+      {/* Filters + Search */}
       <div className="flex flex-col items-center justify-between gap-4 p-4 sm:flex-row rounded-2xl glass">
-        {/* Search */}
         <div className="relative w-full sm:max-w-xs">
           <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-500" />
           <input
@@ -92,7 +92,6 @@ const History = () => {
             className="w-full rounded-xl border border-white/5 bg-[#030712] py-2 pl-9 pr-4 text-xs font-semibold text-white placeholder-slate-600 focus:border-brand-500 focus:outline-none"
           />
         </div>
-        {/* Filters */}
         <div className="flex items-center w-full gap-2 overflow-x-auto sm:w-auto">
           {['All', 'Pending', 'Approved', 'Rejected'].map((opt) => (
             <button
@@ -109,7 +108,8 @@ const History = () => {
           ))}
         </div>
       </div>
-      {/* Dedicated Records List */}
+
+      {/* Records */}
       <div className="p-6 rounded-3xl glass">
         {loading ? (
           <div className="flex justify-center py-12">
@@ -117,25 +117,22 @@ const History = () => {
           </div>
         ) : filteredHistory.length === 0 ? (
           <div className="py-16 text-center">
-            <HelpCircle className="w-12 h-12 mx-auto text-slate-650" />
-            <h3 className="mt-3 text-sm font-bold text-slate-400">No outing records matching your filters</h3>
+            <HelpCircle className="w-12 h-12 mx-auto text-slate-600" />
+            <h3 className="mt-3 text-sm font-bold text-slate-400">No records matching your filters</h3>
           </div>
         ) : (
           <div className="space-y-4">
             {filteredHistory.map((pass, idx) => (
               <div key={idx} className="rounded-2xl border border-white/5 bg-white/[0.01] p-5 space-y-4 transition-all hover:bg-white/[0.02]">
-                
-                {/* Top header row */}
+
                 <div className="flex flex-col items-start justify-between gap-2 pb-3 border-b sm:flex-row sm:items-center border-white/5">
                   <div>
                     <span className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Outing Reason</span>
                     <h3 className="mt-1 text-sm font-bold text-slate-200">{pass.reason}</h3>
                   </div>
-                  <div>
-                    {getStatusBadge(pass.status)}
-                  </div>
+                  {getStatusBadge(pass.status)}
                 </div>
-                {/* Details grid */}
+
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-4">
                   <div>
                     <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider">Requested Start</span>
@@ -153,20 +150,24 @@ const History = () => {
                   </div>
                   <div>
                     <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider">Gate Checkout</span>
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-350 mt-1">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 mt-1">
                       <Clock size={13} className="text-slate-500" />
-                      {pass.actualExitTime ? new Date(pass.actualExitTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Not Checked Out'}
+                      {pass.actualExitTime
+                        ? new Date(pass.actualExitTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        : 'Not Checked Out'}
                     </span>
                   </div>
                   <div>
                     <span className="block text-[10px] text-slate-500 font-bold uppercase tracking-wider">Gate Checkin</span>
-                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-350 mt-1">
+                    <span className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 mt-1">
                       <Clock size={13} className="text-slate-500" />
-                      {pass.actualEntryTime ? new Date(pass.actualEntryTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Not Checked In'}
+                      {pass.actualEntryTime
+                        ? new Date(pass.actualEntryTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+                        : 'Not Checked In'}
                     </span>
                   </div>
                 </div>
-                {/* Remarks section */}
+
                 {(pass.tgRemarks || pass.wardenRemarks) && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-white/[0.01] border border-white/5 rounded-xl p-3 text-[11px] font-medium leading-normal">
                     {pass.tgRemarks && (
@@ -191,4 +192,5 @@ const History = () => {
     </div>
   );
 };
+
 export default History;
