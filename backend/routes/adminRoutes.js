@@ -1,5 +1,7 @@
 const express = require('express');
 const router = express.Router();
+const multer = require('multer');
+const path = require('path');
 
 const {
   uploadExcelStudents,
@@ -12,23 +14,19 @@ const {
   getStats
 } = require('../controllers/adminController');
 
-// Upload Excel Files
-router.post('/upload-students', uploadExcelStudents);
-router.post('/upload-tgs', uploadExcelTGs);
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => { cb(null, 'uploads/'); },
+  filename: (req, file, cb) => { cb(null, Date.now() + path.extname(file.originalname)); }
+});
+const upload = multer({ storage });
 
-// Users & Students
+router.post('/upload-students', upload.single('file'), uploadExcelStudents);
+router.post('/upload-tgs', upload.single('file'), uploadExcelTGs);
 router.get('/users', getAllUsers);
 router.get('/students', searchStudent);
-
-// Gate Passes
 router.get('/gatepasses', getAllGatePasses);
-
-// TG Management
 router.post('/assign-tg', assignTG);
 router.get('/tgs', getAllTGs);
-
-// Dashboard Stats
 router.get('/stats', getStats);
 
-// Export router correctly
 module.exports = router;
