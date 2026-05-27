@@ -41,7 +41,7 @@ const Navbar = ({ toggleSidebar, user }) => {
   // ✅ FIXED: backend uses isRead not read, _id not id
   const markAllAsRead = async () => {
     try {
-      await authService.markAllNotificationsAsRead();
+      await authService.markNotificationsAsRead();   // ✅ fixed
       setNotifications(prev => prev.map(n => ({ ...n, isRead: true })));
     } catch (error) {
       console.error('Failed to mark all as read:', error);
