@@ -1,89 +1,9 @@
-Here are the bugs and errors present in your React component code, along with how to fix them.
-
-### 1. The Critical Compilation Error: Missing TypeScript Types
-
-You have a couple of components written with TypeScript syntax (`e: MouseEvent`), but your components themselves are typed as standard JavaScript functions without explicit types for their destructured props. If this is a `.jsx` or standard `.js` file, `e: MouseEvent` will cause a build compilation error. If it is a `.tsx` file, the missing prop types will trigger TypeScript compiler errors.
-
-**The Fix:** Add Type Interfaces for the components if you are using TypeScript, or remove the `MouseEvent` annotation if you are using vanilla JavaScript.
-
----
-
-### 2. Logic Bug: Math Error in `StatsCounter`
-
-Inside your `StatsCounter` component, you have a counter animation:
-
-```javascript
-const end = value;
-const increment = end / (duration * 60);
-// ...
-setCount(Math.floor(start));
-
-```
-
-Because you pass `value={15000}` for your first statistic and use `Math.floor()`, the calculation will run fine until it hits the final cleanup step:
-
-```javascript
-if (start >= end) {
-  setCount(end); // Sets count to 15000
-  clearInterval(timer);
-}
-
-```
-
-However, for `value={98}` or `value={24}`, the `increment` evaluates to a decimal less than 1 ($98 / 120 = 0.816$).
-Because of `Math.floor(start)`, your counter UI will repeatedly display `0` for several intervals before jumping abruptly, or it will trail behind and snap instantly to the final value, causing a very choppy and broken animation visual.
-
-**The Fix:**
-Use `Math.round()` instead of `Math.floor()` for smoother stepping on smaller values, or adjust the start condition.
-
----
-
-### 3. Missing CSS `animate-gradient` Utility
-
-In your Hero header, you applied the class `animate-gradient`:
-
-```javascript
-className="text-transparent bg-gradient-to-r from-brand-400 via-purple-400 to-pink-400 bg-clip-text animate-gradient"
-
-```
-
-Tailwind CSS does **not** include an `animate-gradient` utility by default. Without defining this animation configuration in your `tailwind.config.js` file, the text gradient will remain static and will not animate.
-
-**The Fix:**
-Add the keyframes and animation utility to your `tailwind.config.js` configuration file:
-
-```javascript
-// tailwind.config.js
-module.exports = {
-  theme: {
-    extend: {
-      animation: {
-        'gradient': 'gradient 6s ease infinite',
-      },
-      keyframes: {
-        gradient: {
-          '0%, 100%': { 'background-size': '200% 200%', 'background-position': 'left center' },
-          '50%': { 'background-size': '200% 200%', 'background-position': 'right center' },
-        },
-      },
-    },
-  },
-}
-
-```
-
----
-
-### Corrected Refactored Component Code (TypeScript Setup)
-
-Here is the fully cleaned up and production-ready code assuming a TypeScript (`.tsx`) environment:
-
-```tsx
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { motion, useAnimation, useInView, AnimatePresence } from 'framer-motion';
+import { motion, useAnimation, useInView } from 'framer-motion';
 import { 
-  QrCode, Users, Clock, ArrowRight, Sparkles
+  Shield, QrCode, Users, Clock, CheckCircle, ArrowRight, 
+  Zap, Sparkles, Layers, Fingerprint, Globe, Cpu 
 } from 'lucide-react';
 
 // Animation variants
@@ -102,96 +22,13 @@ const staggerContainer = {
   visible: { opacity: 1, transition: { staggerChildren: 0.15, delayChildren: 0.2 } }
 };
 
-// Component Prop Interfaces
-interface FeatureCardProps {
-  icon: React.ComponentType<{ className?: string }>;
-  title: string;
-  description: string;
-  delay?: number;
-  index: number;
-}
-
-interface StepCardProps {
-  step: number;
-  title: string;
-  description: string;
-  delay: number;
-}
-
-interface StatsCounterProps {
-  value: number;
-  label: string;
-  suffix?: string;
-  duration?: number;
-}
-
-const RotatingNameBadge = () => {
-  const [index, setIndex] = useState(0);
-  const names = [
-    "GateFlow", "SecurePass Pro", "HostelSync", 
-    "DormSecure", "CampusKey", "PassPort AI", "QRAccess"
-  ];
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setIndex((prev) => (prev + 1) % names.length);
-    }, 2000);
-    return () => clearInterval(interval);
-  }, [names.length]);
-
-  return (
-    <div className="relative inline-flex items-center gap-2 px-6 py-2 mb-6 overflow-hidden border rounded-full bg-white/10 backdrop-blur-md border-white/20 shadow-lg shadow-brand-500/20">
-      <Sparkles className="w-4 h-4 text-yellow-400 animate-pulse" />
-      <span className="text-sm font-semibold text-transparent bg-gradient-to-r from-white to-slate-300 bg-clip-text">
-        Powered by
-      </span>
-      <AnimatePresence mode="wait">
-        <motion.span
-          key={names[index]}
-          initial={{ opacity: 0, y: 15, rotateX: -90 }}
-          animate={{ opacity: 1, y: 0, rotateX: 0 }}
-          exit={{ opacity: 0, y: -15, rotateX: 90 }}
-          transition={{ duration: 0.4, type: "spring", stiffness: 300 }}
-          className="relative text-sm font-black tracking-wide text-transparent bg-gradient-to-r from-brand-300 via-purple-300 to-pink-300 bg-clip-text"
-        >
-          {names[index]}
-        </motion.span>
-      </AnimatePresence>
-      <div className="absolute inset-0 -z-10 bg-gradient-to-r from-brand-500/20 to-purple-500/20 blur-xl" />
-    </div>
-  );
+const scaleOnHover = {
+  whileHover: { scale: 1.05, transition: { duration: 0.2 } }
 };
 
-const CursorGlow = () => {
-  const [position, setPosition] = useState({ x: 0, y: 0 });
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      setPosition({ x: e.clientX, y: e.clientY });
-      setIsVisible(true);
-    };
-    window.addEventListener('mousemove', handleMouseMove);
-    return () => window.removeEventListener('mousemove', handleMouseMove);
-  }, []);
-
-  if (!isVisible) return null;
-  return (
-    <motion.div
-      className="fixed w-96 h-96 rounded-full pointer-events-none -z-10"
-      animate={{
-        x: position.x - 192,
-        y: position.y - 192,
-        background: "radial-gradient(circle, rgba(59,130,246,0.15) 0%, rgba(139,92,246,0.08) 50%, rgba(0,0,0,0) 70%)"
-      }}
-      transition={{ type: "tween", ease: "backOut", duration: 0.1 }}
-    />
-  );
-};
-
-const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, description, delay, index }) => {
+const FeatureCard = ({ icon: Icon, title, description, delay, index }) => {
   const controls = useAnimation();
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useRef(null);
   const inView = useInView(ref, { once: true, amount: 0.3 });
 
   useEffect(() => {
@@ -210,7 +47,7 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, descriptio
     >
       <div className="absolute inset-0 transition-opacity duration-500 opacity-0 rounded-2xl bg-gradient-to-br from-brand-500/5 to-transparent group-hover:opacity-100" />
       <div className="relative z-10">
-        <div className="flex items-center justify-center mb-5 transition-all duration-300 w-14 h-14 bg-gradient-to-br from-brand-500/30 to-purple-500/30 rounded-xl group-hover:scale-110 group-hover:rotate-3 group-hover:shadow-lg group-hover:shadow-brand-500/40">
+        <div className="flex items-center justify-center mb-5 transition-all duration-300 w-14 h-14 bg-gradient-to-br from-brand-500/30 to-purple-500/30 rounded-xl group-hover:scale-110 group-hover:rotate-3">
           <Icon className="w-7 h-7 text-brand-400" />
         </div>
         <h3 className="mb-2 text-xl font-bold text-white">{title}</h3>
@@ -220,9 +57,9 @@ const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, descriptio
   );
 };
 
-const StepCard: React.FC<StepCardProps> = ({ step, title, description, delay }) => {
+const StepCard = ({ step, title, description, delay }) => {
   const controls = useAnimation();
-  const ref = useRef<HTMLDivElement>(null);
+  const ref = useRef(null);
   const inView = useInView(ref, { once: true });
 
   useEffect(() => {
@@ -259,39 +96,6 @@ const StepCard: React.FC<StepCardProps> = ({ step, title, description, delay }) 
   );
 };
 
-const StatsCounter: React.FC<StatsCounterProps> = ({ value, label, suffix = "+", duration = 2 }) => {
-  const [count, setCount] = useState(0);
-  const ref = useRef<HTMLDivElement>(null);
-  const inView = useInView(ref, { once: true, margin: "-100px" });
-
-  useEffect(() => {
-    if (inView) {
-      let start = 0;
-      const end = value;
-      const increment = end / (duration * 60);
-      const timer = setInterval(() => {
-        start += increment;
-        if (start >= end) {
-          setCount(end);
-          clearInterval(timer);
-        } else {
-          setCount(Math.round(start)); // Changed floor to round for accurate linear intervals
-        }
-      }, 16);
-      return () => clearInterval(timer);
-    }
-  }, [inView, value, duration]);
-
-  return (
-    <div ref={ref} className="text-center">
-      <div className="text-4xl font-black text-transparent md:text-5xl bg-gradient-to-r from-white to-brand-400 bg-clip-text">
-        {count}{suffix}
-      </div>
-      <p className="mt-2 text-sm font-medium text-slate-400">{label}</p>
-    </div>
-  );
-};
-
 const AnimatedBackground = () => {
   return (
     <div className="fixed inset-0 overflow-hidden -z-10">
@@ -299,20 +103,16 @@ const AnimatedBackground = () => {
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/30 rounded-full blur-[150px] animate-pulse delay-1000" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[120px]" />
       
+      {/* Floating orbs */}
       <motion.div
         className="absolute w-32 h-32 rounded-full top-20 left-10 bg-yellow-500/20 blur-3xl"
-        animate={{ y: [0, 30, 0], rotate: [0, 10, 0], scale: [1, 1.2, 1] }}
+        animate={{ y: [0, 30, 0], rotate: [0, 10, 0] }}
         transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
       />
       <motion.div
         className="absolute w-40 h-40 rounded-full bottom-40 right-20 bg-pink-500/20 blur-3xl"
-        animate={{ y: [0, -40, 0], rotate: [0, -10, 0], scale: [1, 1.1, 1] }}
+        animate={{ y: [0, -40, 0], rotate: [0, -10, 0] }}
         transition={{ duration: 10, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-      />
-      <motion.div
-        className="absolute w-56 h-56 rounded-full top-1/3 left-1/3 bg-indigo-500/10 blur-3xl"
-        animate={{ x: [0, 20, 0], y: [0, -20, 0] }}
-        transition={{ duration: 12, repeat: Infinity, ease: "easeInOut" }}
       />
     </div>
   );
@@ -320,7 +120,7 @@ const AnimatedBackground = () => {
 
 const HomePage = () => {
   const heroControls = useAnimation();
-  const heroRef = useRef<HTMLDivElement>(null);
+  const heroRef = useRef(null);
   const heroInView = useInView(heroRef, { once: true });
 
   useEffect(() => {
@@ -329,7 +129,6 @@ const HomePage = () => {
 
   return (
     <div className="min-h-screen overflow-x-hidden bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950">
-      <CursorGlow />
       <AnimatedBackground />
 
       {/* Hero Section */}
@@ -340,17 +139,13 @@ const HomePage = () => {
             animate={heroControls}
             variants={staggerContainer}
           >
-            <motion.div variants={fadeUp} className="flex justify-center">
-              <RotatingNameBadge />
-            </motion.div>
-
             <motion.h1 
               variants={fadeUp}
               className="mb-6 text-5xl font-black leading-tight tracking-tight text-white md:text-7xl lg:text-8xl"
             >
-              Hostel Gate Pass<br />
-              <span className="text-transparent bg-gradient-to-r from-brand-400 via-purple-400 to-pink-400 bg-clip-text animate-gradient">
-                System
+              Hostel Gate <br />
+              <span className="text-transparent bg-gradient-to-r from-brand-400 via-purple-400 to-pink-400 bg-clip-text">
+               Pass System
               </span>
             </motion.h1>
 
@@ -367,17 +162,16 @@ const HomePage = () => {
             >
               <Link
                 to="/login"
-                className="group inline-flex items-center justify-center gap-2 px-8 py-4 font-bold text-white transition-all shadow-lg bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 rounded-xl shadow-brand-500/30 hover:shadow-xl hover:shadow-brand-500/40 hover:-translate-y-1"
+                className="inline-flex items-center justify-center gap-2 px-8 py-4 font-bold text-white transition-all shadow-lg group bg-gradient-to-r from-brand-500 to-brand-600 hover:from-brand-600 hover:to-brand-700 rounded-xl shadow-brand-500/30 hover:shadow-xl hover:shadow-brand-500/40 hover:-translate-y-1"
               >
                 Login to Portal 
-                <ArrowRight size={18} className="transition-transform group-hover:translate-x-1 group-hover:scale-110" />
+                <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
               </Link>
               <Link
                 to="/register"
                 className="inline-flex items-center justify-center gap-2 px-8 py-4 font-bold text-white transition-all border group bg-white/5 hover:bg-white/10 border-white/10 rounded-xl hover:-translate-y-1 backdrop-blur-sm"
               >
                 Register as Student
-                <Sparkles size={16} className="opacity-0 transition-opacity group-hover:opacity-100" />
               </Link>
             </motion.div>
           </motion.div>
@@ -452,25 +246,8 @@ const HomePage = () => {
         </div>
       </section>
 
-      {/* Statistics Section */}
-      <section className="py-20 bg-gradient-to-r from-brand-500/5 via-purple-500/5 to-pink-500/5">
-        <div className="container px-4 mx-auto">
-          <motion.div
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={staggerContainer}
-            className="grid grid-cols-1 gap-12 md:grid-cols-3"
-          >
-            <StatsCounter value={15000} label="Gate Passes Processed" suffix="k+" />
-            <StatsCounter value={98} label="Student Satisfaction" suffix="%" />
-            <StatsCounter value={24} label="Real-time Support" suffix="/7" />
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Enhanced CTA Section */}
-      <section className="py-24">
+      {/* Stats / CTA */}
+      <section className="py-24 bg-gradient-to-r from-brand-500/10 via-purple-500/10 to-pink-500/10">
         <div className="container px-4 mx-auto">
           <div className="max-w-4xl mx-auto text-center">
             <motion.div
@@ -478,24 +255,20 @@ const HomePage = () => {
               whileInView="visible"
               viewport={{ once: true }}
               variants={fadeIn}
-              className="relative p-12 overflow-hidden border bg-white/5 backdrop-blur-md rounded-3xl border-white/10 group"
+              className="p-12 border bg-white/5 backdrop-blur-md rounded-3xl border-white/10"
             >
-              <div className="absolute inset-0 transition-opacity duration-700 opacity-0 bg-gradient-to-r from-brand-500/20 via-purple-500/20 to-pink-500/20 group-hover:opacity-100" />
-              <h2 className="relative mb-4 text-3xl font-bold text-white md:text-5xl">
+              <h2 className="mb-4 text-3xl font-bold text-white md:text-5xl">
                 Ready to modernize your hostel?
               </h2>
-              <p className="relative mb-8 text-lg text-slate-300">
+              <p className="mb-8 text-lg text-slate-300">
                 Join thousands of students and staff who enjoy a paperless, efficient gate pass system.
               </p>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.98 }}>
-                <Link
-                  to="/register"
-                  className="relative inline-flex items-center gap-2 px-10 py-4 font-bold transition-all bg-white shadow-xl text-slate-900 hover:bg-gray-100 rounded-xl hover:-translate-y-1 group"
-                >
-                  Get Started Now 
-                  <ArrowRight size={18} className="transition-transform group-hover:translate-x-1" />
-                </Link>
-              </motion.div>
+              <Link
+                to="/register"
+                className="inline-flex items-center gap-2 px-10 py-4 font-bold transition-all bg-white shadow-xl text-slate-900 hover:bg-gray-100 rounded-xl hover:-translate-y-1"
+              >
+                Get Started Now <ArrowRight size={18} />
+              </Link>
             </motion.div>
           </div>
         </div>
@@ -503,12 +276,10 @@ const HomePage = () => {
 
       {/* Footer */}
       <footer className="py-8 text-sm text-center border-t border-white/10 text-slate-500">
-        <p>© {new Date().getFullYear()} Hostel Gate Pass System – Secure. Fast. Paperless. | v3.0</p>
+        <p>© 2025 Hostel Gate Pass System – Secure. Fast. Paperless. | v2.0</p>
       </footer>
     </div>
   );
 };
 
 export default HomePage;
-
-```
