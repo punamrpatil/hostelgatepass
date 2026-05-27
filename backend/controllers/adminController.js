@@ -12,15 +12,18 @@ const uploadExcelStudents = async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: 'Please upload an Excel spreadsheet file' });
   }
-  const filePath = req.file.path;
+
   let successCount = 0;
   let skippedCount = 0;
   const errors = [];
+
   try {
-    const workbook = xlsx.readFile(filePath);
+    // ✅ Read from memory buffer — no disk folder needed
+    const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const rawRows = xlsx.utils.sheet_to_json(worksheet);
+
     for (const row of rawRows) {
       const name = row.name ? row.name.toString().trim() : '';
       const rollNo = row.rollNo ? row.rollNo.toString().trim() : '';
@@ -32,11 +35,13 @@ const uploadExcelStudents = async (req, res) => {
       const roomNo = row.roomNo ? row.roomNo.toString().trim() : '';
       const email = row.email ? row.email.toString().trim().toLowerCase() : '';
       const tgNameInput = row.tgName ? row.tgName.toString().trim() : '';
+
       if (!name || !rollNo || !branch || !division || !gender || !studentPhone || !parentPhone || !roomNo || !email) {
-        errors.push({ row: row, reason: 'Missing mandatory fields' });
+        errors.push({ row, reason: 'Missing mandatory fields' });
         skippedCount++;
         continue;
       }
+
       const userExists = await User.findOne({ email });
       const studentExists = await Student.findOne({ rollNo });
       if (userExists || studentExists) {
@@ -44,6 +49,7 @@ const uploadExcelStudents = async (req, res) => {
         skippedCount++;
         continue;
       }
+
       try {
         const user = await User.create({
           name,
@@ -52,6 +58,7 @@ const uploadExcelStudents = async (req, res) => {
           role: 'Student',
           phone: studentPhone
         });
+
         let matchedTG = await TG.findOne({
           branch: { $regex: new RegExp(`^${branch}$`, 'i') },
           division: { $regex: new RegExp(`^${division}$`, 'i') }
@@ -61,6 +68,7 @@ const uploadExcelStudents = async (req, res) => {
             tgName: { $regex: new RegExp(`^${tgNameInput}$`, 'i') }
           });
         }
+
         await Student.create({
           userId: user._id,
           rollNo,
@@ -78,19 +86,17 @@ const uploadExcelStudents = async (req, res) => {
         skippedCount++;
       }
     }
+
     res.status(200).json({
       message: 'Students file processed successfully',
       successCount,
       skippedCount,
       errors
     });
+
   } catch (error) {
     console.error('Students Excel Upload Error:', error);
     res.status(500).json({ message: 'Error reading Excel file: ' + error.message });
-  } finally {
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
   }
 };
 
@@ -101,32 +107,38 @@ const uploadExcelTGs = async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ message: 'Please upload an Excel spreadsheet file' });
   }
-  const filePath = req.file.path;
+
   let successCount = 0;
   let skippedCount = 0;
   const errors = [];
+
   try {
-    const workbook = xlsx.readFile(filePath);
+    // ✅ Read from memory buffer — no disk folder needed
+    const workbook = xlsx.read(req.file.buffer, { type: 'buffer' });
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
     const rawRows = xlsx.utils.sheet_to_json(worksheet);
+
     for (const row of rawRows) {
       const tgName = row.tgName ? row.tgName.toString().trim() : '';
       const branch = row.branch ? row.branch.toString().trim() : '';
       const division = row.division ? row.division.toString().trim() : '';
       const email = row.email ? row.email.toString().trim().toLowerCase() : '';
       const phone = row.phone ? row.phone.toString().trim() : '';
+
       if (!tgName || !branch || !division || !email || !phone) {
         errors.push({ row, reason: 'Missing mandatory fields' });
         skippedCount++;
         continue;
       }
+
       const userExists = await User.findOne({ email });
       if (userExists) {
         errors.push({ email, reason: 'User already exists with this email' });
         skippedCount++;
         continue;
       }
+
       try {
         const user = await User.create({
           name: tgName,
@@ -135,6 +147,7 @@ const uploadExcelTGs = async (req, res) => {
           role: 'TG',
           phone
         });
+
         const tg = await TG.create({
           userId: user._id,
           tgName,
@@ -142,6 +155,7 @@ const uploadExcelTGs = async (req, res) => {
           division,
           phone
         });
+
         await Student.updateMany(
           {
             branch: { $regex: new RegExp(`^${branch}$`, 'i') },
@@ -156,19 +170,17 @@ const uploadExcelTGs = async (req, res) => {
         skippedCount++;
       }
     }
+
     res.status(200).json({
       message: 'TGs file processed successfully',
       successCount,
       skippedCount,
       errors
     });
+
   } catch (error) {
     console.error('TG Excel Upload Error:', error);
     res.status(500).json({ message: 'Error reading Excel file: ' + error.message });
-  } finally {
-    if (fs.existsSync(filePath)) {
-      fs.unlinkSync(filePath);
-    }
   }
 };
 
@@ -235,8 +247,6 @@ const getAllGatePasses = async (req, res) => {
   }
 };
 
-// ========== NEW FUNCTIONS (FIX TG ASSIGNMENT) ==========
-
 // @desc    Assign TG to a student
 // @route   POST /api/admin/assign-tg
 // @access  Private/Admin
@@ -283,13 +293,7 @@ const getStats = async (req, res) => {
     const tgsCount = await User.countDocuments({ role: 'TG' });
     const wardensCount = await User.countDocuments({ role: 'Warden' });
     const totalGatePasses = await GatePass.countDocuments();
-    res.json({
-      totalUsers,
-      studentsCount,
-      tgsCount,
-      wardensCount,
-      totalGatePasses
-    });
+    res.json({ totalUsers, studentsCount, tgsCount, wardensCount, totalGatePasses });
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

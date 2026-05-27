@@ -14,11 +14,8 @@ const {
   getStats
 } = require('../controllers/adminController');
 
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => { cb(null, 'uploads/'); },
-  filename: (req, file, cb) => { cb(null, Date.now() + path.extname(file.originalname)); }
-});
-const upload = multer({ storage });
+// ✅ memoryStorage — no uploads folder needed
+const upload = multer({ storage: multer.memoryStorage() });
 
 router.post('/upload-students', upload.single('file'), uploadExcelStudents);
 router.post('/upload-tgs', upload.single('file'), uploadExcelTGs);
