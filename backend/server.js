@@ -15,18 +15,9 @@ dotenv.config();
 
 const app = express();
 
-// ✅ FIXED CORS
-app.use(cors({
-  origin: [
-    'http://localhost:5173',
-    'http://localhost:3000',
-    process.env.FRONTEND_URL,
-  ].filter(Boolean),
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],   // ← ADDED
-  allowedHeaders: ['Content-Type', 'Authorization'],       // ← ADDED
-  credentials: true,
-}));
-app.options('*', cors());  // ← ADDED (handles preflight)
+// Allow all origins (fixes CORS for Vercel frontend)
+app.use(cors());
+app.options('*', cors());
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
