@@ -1,10 +1,89 @@
+Here are the bugs and errors present in your React component code, along with how to fix them.
+
+### 1. The Critical Compilation Error: Missing TypeScript Types
+
+You have a couple of components written with TypeScript syntax (`e: MouseEvent`), but your components themselves are typed as standard JavaScript functions without explicit types for their destructured props. If this is a `.jsx` or standard `.js` file, `e: MouseEvent` will cause a build compilation error. If it is a `.tsx` file, the missing prop types will trigger TypeScript compiler errors.
+
+**The Fix:** Add Type Interfaces for the components if you are using TypeScript, or remove the `MouseEvent` annotation if you are using vanilla JavaScript.
+
+---
+
+### 2. Logic Bug: Math Error in `StatsCounter`
+
+Inside your `StatsCounter` component, you have a counter animation:
+
+```javascript
+const end = value;
+const increment = end / (duration * 60);
+// ...
+setCount(Math.floor(start));
+
+```
+
+Because you pass `value={15000}` for your first statistic and use `Math.floor()`, the calculation will run fine until it hits the final cleanup step:
+
+```javascript
+if (start >= end) {
+  setCount(end); // Sets count to 15000
+  clearInterval(timer);
+}
+
+```
+
+However, for `value={98}` or `value={24}`, the `increment` evaluates to a decimal less than 1 ($98 / 120 = 0.816$).
+Because of `Math.floor(start)`, your counter UI will repeatedly display `0` for several intervals before jumping abruptly, or it will trail behind and snap instantly to the final value, causing a very choppy and broken animation visual.
+
+**The Fix:**
+Use `Math.round()` instead of `Math.floor()` for smoother stepping on smaller values, or adjust the start condition.
+
+---
+
+### 3. Missing CSS `animate-gradient` Utility
+
+In your Hero header, you applied the class `animate-gradient`:
+
+```javascript
+className="text-transparent bg-gradient-to-r from-brand-400 via-purple-400 to-pink-400 bg-clip-text animate-gradient"
+
+```
+
+Tailwind CSS does **not** include an `animate-gradient` utility by default. Without defining this animation configuration in your `tailwind.config.js` file, the text gradient will remain static and will not animate.
+
+**The Fix:**
+Add the keyframes and animation utility to your `tailwind.config.js` configuration file:
+
+```javascript
+// tailwind.config.js
+module.exports = {
+  theme: {
+    extend: {
+      animation: {
+        'gradient': 'gradient 6s ease infinite',
+      },
+      keyframes: {
+        gradient: {
+          '0%, 100%': { 'background-size': '200% 200%', 'background-position': 'left center' },
+          '50%': { 'background-size': '200% 200%', 'background-position': 'right center' },
+        },
+      },
+    },
+  },
+}
+
+```
+
+---
+
+### Corrected Refactored Component Code (TypeScript Setup)
+
+Here is the fully cleaned up and production-ready code assuming a TypeScript (`.tsx`) environment:
+
+```tsx
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, useAnimation, useInView, AnimatePresence } from 'framer-motion';
 import { 
-  Shield, QrCode, Users, Clock, CheckCircle, ArrowRight, 
-  Zap, Sparkles, Layers, Fingerprint, Globe, Cpu, 
-  Activity, Scan, Award, TrendingUp, Star
+  QrCode, Users, Clock, ArrowRight, Sparkles
 } from 'lucide-react';
 
 // Animation variants
@@ -23,11 +102,29 @@ const staggerContainer = {
   visible: { opacity: 1, transition: { staggerChildren: 0.15, delayChildren: 0.2 } }
 };
 
-const scaleOnHover = {
-  whileHover: { scale: 1.05, transition: { duration: 0.2 } }
-};
+// Component Prop Interfaces
+interface FeatureCardProps {
+  icon: React.ComponentType<{ className?: string }>;
+  title: string;
+  description: string;
+  delay?: number;
+  index: number;
+}
 
-// Dynamic rotating name component
+interface StepCardProps {
+  step: number;
+  title: string;
+  description: string;
+  delay: number;
+}
+
+interface StatsCounterProps {
+  value: number;
+  label: string;
+  suffix?: string;
+  duration?: number;
+}
+
 const RotatingNameBadge = () => {
   const [index, setIndex] = useState(0);
   const names = [
@@ -40,7 +137,7 @@ const RotatingNameBadge = () => {
       setIndex((prev) => (prev + 1) % names.length);
     }, 2000);
     return () => clearInterval(interval);
-  }, []);
+  }, [names.length]);
 
   return (
     <div className="relative inline-flex items-center gap-2 px-6 py-2 mb-6 overflow-hidden border rounded-full bg-white/10 backdrop-blur-md border-white/20 shadow-lg shadow-brand-500/20">
@@ -65,7 +162,6 @@ const RotatingNameBadge = () => {
   );
 };
 
-// Animated cursor spotlight effect
 const CursorGlow = () => {
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isVisible, setIsVisible] = useState(false);
@@ -93,9 +189,9 @@ const CursorGlow = () => {
   );
 };
 
-const FeatureCard = ({ icon: Icon, title, description, delay, index }) => {
+const FeatureCard: React.FC<FeatureCardProps> = ({ icon: Icon, title, description, delay, index }) => {
   const controls = useAnimation();
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, amount: 0.3 });
 
   useEffect(() => {
@@ -124,9 +220,9 @@ const FeatureCard = ({ icon: Icon, title, description, delay, index }) => {
   );
 };
 
-const StepCard = ({ step, title, description, delay }) => {
+const StepCard: React.FC<StepCardProps> = ({ step, title, description, delay }) => {
   const controls = useAnimation();
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true });
 
   useEffect(() => {
@@ -163,9 +259,9 @@ const StepCard = ({ step, title, description, delay }) => {
   );
 };
 
-const StatsCounter = ({ value, label, suffix = "+", duration = 2 }) => {
+const StatsCounter: React.FC<StatsCounterProps> = ({ value, label, suffix = "+", duration = 2 }) => {
   const [count, setCount] = useState(0);
-  const ref = useRef(null);
+  const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-100px" });
 
   useEffect(() => {
@@ -179,7 +275,7 @@ const StatsCounter = ({ value, label, suffix = "+", duration = 2 }) => {
           setCount(end);
           clearInterval(timer);
         } else {
-          setCount(Math.floor(start));
+          setCount(Math.round(start)); // Changed floor to round for accurate linear intervals
         }
       }, 16);
       return () => clearInterval(timer);
@@ -203,7 +299,6 @@ const AnimatedBackground = () => {
       <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-500/30 rounded-full blur-[150px] animate-pulse delay-1000" />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[120px]" />
       
-      {/* Floating orbs with enhanced animation */}
       <motion.div
         className="absolute w-32 h-32 rounded-full top-20 left-10 bg-yellow-500/20 blur-3xl"
         animate={{ y: [0, 30, 0], rotate: [0, 10, 0], scale: [1, 1.2, 1] }}
@@ -225,7 +320,7 @@ const AnimatedBackground = () => {
 
 const HomePage = () => {
   const heroControls = useAnimation();
-  const heroRef = useRef(null);
+  const heroRef = useRef<HTMLDivElement>(null);
   const heroInView = useInView(heroRef, { once: true });
 
   useEffect(() => {
@@ -245,7 +340,6 @@ const HomePage = () => {
             animate={heroControls}
             variants={staggerContainer}
           >
-            {/* Animated Rotating Name Badge - replaces old badge */}
             <motion.div variants={fadeUp} className="flex justify-center">
               <RotatingNameBadge />
             </motion.div>
@@ -416,3 +510,5 @@ const HomePage = () => {
 };
 
 export default HomePage;
+
+```
